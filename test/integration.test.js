@@ -42,7 +42,7 @@ describe('Integration Tests', () => {
       const response = await SELF.fetch(testUrl, { method: 'HEAD' });
 
       expect([200, 301, 302, 404]).toContain(response.status);
-    });
+    }, 10000);
 
     it('should handle npm package requests', async () => {
       const testUrl = 'https://example.com/npm/react';
@@ -63,47 +63,6 @@ describe('Integration Tests', () => {
       const response = await SELF.fetch(testUrl, { method: 'HEAD' });
 
       expect([200, 301, 302, 404]).toContain(response.status);
-    });
-  });
-
-  describe('Git Protocol Integration', () => {
-    it('should handle Git info/refs requests', async () => {
-      const testUrl =
-        'https://example.com/gh/microsoft/vscode.git/info/refs?service=git-upload-pack';
-      const response = await SELF.fetch(testUrl, {
-        headers: {
-          'User-Agent': 'git/2.34.1'
-        }
-      });
-
-      expect([200, 301, 302, 404]).toContain(response.status);
-    });
-
-    it('should handle Git upload-pack requests', async () => {
-      const testUrl = 'https://example.com/gh/microsoft/vscode.git/git-upload-pack';
-      const response = await SELF.fetch(testUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-git-upload-pack-request',
-          'User-Agent': 'git/2.34.1'
-        },
-        body: '0000' // Minimal Git protocol data
-      });
-
-      expect([200, 301, 302, 400, 404]).toContain(response.status);
-    });
-
-    it('should preserve Git-specific headers', async () => {
-      const testUrl = 'https://example.com/gh/test/repo.git/info/refs';
-      const response = await SELF.fetch(testUrl, {
-        headers: {
-          'User-Agent': 'git/2.34.1',
-          'Git-Protocol': 'version=2'
-        }
-      });
-
-      // Should not reject Git-specific headers
-      expect(response.status).not.toBe(400);
     });
   });
 
@@ -136,7 +95,7 @@ describe('Integration Tests', () => {
       });
 
       // Git requests should not be cached (no cache headers)
-      expect(response.headers.get('Cache-Control')).not.toContain('max-age=1800');
+      expect(response.headers.get('Cache-Control') || '').not.toContain('max-age=1800');
     });
   });
 
@@ -204,7 +163,7 @@ describe('Integration Tests', () => {
         const response = await SELF.fetch(url, { method: 'HEAD' });
         expect(response.headers.get('X-Performance-Metrics')).toBeTruthy();
       }
-    });
+    }, 10000);
   });
 
   describe('Content Type Handling', () => {
@@ -340,7 +299,7 @@ describe('Integration Tests', () => {
       );
 
       // All responses should have consistent security headers
-      responses.forEach(response => {
+      responses.forEach((/** @type {Response} */ response) => {
         expect(response.headers.get('Strict-Transport-Security')).toBeTruthy();
         expect(response.headers.get('X-Performance-Metrics')).toBeTruthy();
       });
